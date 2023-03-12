@@ -1,6 +1,7 @@
 import json
 import numpy as np
 from datetime import datetime
+from helper import *
 
 
 def create_npy_inputs():
@@ -11,6 +12,7 @@ def create_npy_inputs():
 
 
 NUM_FEATURES = 5
+
 
 def extract_features() -> np.ndarray:
     user_data_file = open("json/users.json", "r")
@@ -43,10 +45,12 @@ def extract_features() -> np.ndarray:
     # extract features
     for index, event in enumerate(event_data):
         event_class = event["code"]
-        feats[index] = np.append(extract_event_features(event, event_dict), event_class)
+        feats[index] = np.append(extract_event_features(event, event_dict), get_evt_idx(event_class))
 
     return feats
 
 
 def extract_event_features(event_data: dict, event_dict: dict) -> np.ndarray:
-    pass
+    feats = np.zeros(NUM_FEATURES)
+
+    return feats
