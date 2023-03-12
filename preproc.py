@@ -19,7 +19,7 @@ def preproc_events(mode: Mode = Mode.FULL):
     file = open("input/emailevents_export.csv", "r")
     csv_reader = csv.reader(file)
     events_json = []
-    for event in csv_reader:
+    for index, event in enumerate(csv_reader):
         (index, code, _, user_id, event_id, timestamp) = event
         event_json = {
             "index": int(index),
@@ -28,10 +28,13 @@ def preproc_events(mode: Mode = Mode.FULL):
             "timestamp": timestamp
         }
         events_json.append(event_json)
+        if (mode == Mode.PARTIAL) and (index >= 1000):
+            break
     file.close()
 
-    fout = open("output/events.json", 'w')
+    fout = open("json/events.json", 'w')
     fout.write(json.dumps(events_json))
+    print("Output events.json")
 
 
 def preproc_users():
@@ -49,5 +52,6 @@ def preproc_users():
         users_json.append(user_json)
     file.close()
 
-    fout = open('output/users.json', 'w')
+    fout = open('json/users.json', 'w')
     fout.write(json.dumps(users_json))
+    print("Output users.json")

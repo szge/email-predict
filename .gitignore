@@ -130,4 +130,4 @@ dmypy.json
 
 # Input info
 input/*
-output/*
+json/*

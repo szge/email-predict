@@ -1,5 +1,6 @@
 from preproc import *
+from create_npy_inputs import *
 
 if __name__ == "__main__":
     preproc(mode=Mode.PARTIAL)
-    print("Finished.")
+    create_npy_inputs()
