@@ -1,6 +1,7 @@
 import csv
 import json
 from enum import Enum
+from helper import *
 
 
 class Mode(Enum):
@@ -18,17 +19,18 @@ def preproc_events(mode: Mode = Mode.FULL):
     print("Preprocessing events...")
     file = open("input/emailevents_export.csv", "r")
     csv_reader = csv.reader(file)
-    events_json = []
+    events_json = {}
     for idx, event in enumerate(csv_reader):
-        (index, code, _, user_id, event_id, timestamp) = event
-        event_json = {
-            "index": int(index),
-            "code": code,
-            "user_id": int(user_id),
-            "timestamp": timestamp
-        }
-        events_json.append(event_json)
-        if (mode == Mode.PARTIAL) and (idx >= 1000):
+        (id, code, _, user_id, event_id, timestamp) = event
+        if code in evt_codes:
+            event_json = {
+                "id": int(id),
+                "code": code,
+                "user_id": int(user_id),
+                "timestamp": timestamp
+            }
+            events_json[int(id)] = event_json
+        if (mode == Mode.PARTIAL) and (idx >= 100000):
             break
     file.close()
 
@@ -41,15 +43,11 @@ def preproc_users():
     print("Preprocessing users...")
     file = open("input/users_export.csv", "r")
     csv_reader = csv.reader(file)
-    users_json = []
+    users_json = {}
     for user in csv_reader:
         (user_id, preferences) = user
         preferences = list(preferences)
-        user_json = {
-            "user_id": int(user_id),
-            "preferences": preferences
-        }
-        users_json.append(user_json)
+        users_json[int(user_id)] = preferences
     file.close()
 
     fout = open('json/users.json', 'w')
