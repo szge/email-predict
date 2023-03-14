@@ -11,6 +11,7 @@ from sklearn.linear_model import SGDClassifier
 
 import numpy as np
 import numpy.typing as npt
+import time
 
 np.random.seed(420)
 
@@ -37,15 +38,18 @@ def find_best_classifier(output_dir, x_train, x_test, y_train, y_test) -> int:
     i_best = 0
     acc_best = 0
 
+    classifiers = [
+        GaussianNB,
+        RandomForestClassifier,
+        AdaBoostClassifier,
+        SGDClassifier,
+        # MLPClassifier
+    ]
+
     with open(f"{output_dir}/results.txt", "w") as outf:
-        for idx, _class in enumerate([
-            SGDClassifier,
-            AdaBoostClassifier,
-            RandomForestClassifier,
-            GaussianNB,
-            # MLPClassifier
-        ]):
+        for idx, _class in enumerate(classifiers):
             print(f"Testing {_class.__name__}...")
+            start_time = time.time()
             if _class == RandomForestClassifier:
                 clf = RandomForestClassifier(max_depth=5, n_estimators=10)
             elif _class == MLPClassifier:
@@ -60,7 +64,11 @@ def find_best_classifier(output_dir, x_train, x_test, y_train, y_test) -> int:
                 i_best = idx
                 acc_best = acc
 
+            end_time = time.time()
             outf.write(f"{_class.__name__} accuracy: {acc}\n")
+            print(f"{_class.__name__} accuracy: {acc} time: {round(end_time - start_time, 2)}")
+
+    print(f"Best classifier: {classifiers[i_best].__name__} with accuracy {acc_best}")
 
     return i_best
 

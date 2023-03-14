@@ -30,7 +30,7 @@ def preproc_events(mode: Mode = Mode.FULL):
                 "timestamp": timestamp
             }
             events_json[int(id)] = event_json
-        if (mode == Mode.PARTIAL) and (idx >= 100000):
+        if (mode == Mode.PARTIAL) and (idx >= 500000):
             break
     file.close()
 
