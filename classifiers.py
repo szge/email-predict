@@ -42,7 +42,7 @@ def find_best_classifier(output_dir, x_train, x_test, y_train, y_test) -> int:
         GaussianNB,
         RandomForestClassifier,
         AdaBoostClassifier,
-        SGDClassifier,
+        # SGDClassifier,
         # MLPClassifier
     ]
 

@@ -31,6 +31,8 @@ def extract_features() -> npt.NDArray[np.float64]:
     # create event dict to speed up event lookup
     event_dict = {}  # maps user id (int) to list of user events (list[dict])
 
+    print("Creating event dict...")
+
     for evt_id, event in event_data.items():
         user_id = event["user_id"]
         if user_id not in event_dict:
@@ -44,12 +46,17 @@ def extract_features() -> npt.NDArray[np.float64]:
     # print(event_data)
 
     # extract features
+    print("Extracting features...")
     for index, (key, event) in enumerate(event_data.items()):
         event_class = event["code"]
-        if event_class in evt_codes:
-            preferences = user_data[str(event["user_id"])]
-            user_event_list = event_dict[event["user_id"]]
-            feats[index] = np.append(extract_event_features(event, user_event_list, preferences), get_evt_idx(event_class))
+        user_id = event["user_id"]
+        if event_class in evt_codes and str(user_id) in user_data:
+            preferences = user_data[str(user_id)]
+            user_event_list = event_dict[user_id]
+            feats[index] = np.append(
+                extract_event_features(event, user_event_list, preferences),
+                get_evt_idx(event_class)
+            )
 
     # np.set_printoptions(threshold=np.inf)
     # print(feats[-10:, :])
@@ -62,7 +69,6 @@ def extract_event_features(event: dict, user_event_list: list, preferences: dict
     # print(event)
     # print(preferences)
 
-    user_id = event["user_id"]
     evt_ids = [evt["id"] for evt in user_event_list]
     evt_i = evt_ids.index(int(event["id"]))
 
