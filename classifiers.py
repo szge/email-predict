@@ -47,7 +47,7 @@ def find_best_classifier(output_dir, x_train, x_test, y_train, y_test) -> int:
         RandomForestClassifier,
         AdaBoostClassifier,
         BaggingClassifier,
-        KNeighborsClassifier,
+        # KNeighborsClassifier,
     ]
 
     with open(f"{output_dir}/results.txt", "w") as outf:

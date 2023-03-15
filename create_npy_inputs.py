@@ -3,7 +3,7 @@ import numpy as np
 import numpy.typing as npt
 from datetime import datetime
 from helper import *
-from line_profiler_pycharm import profile
+# from line_profiler_pycharm import profile
 
 
 def create_npy_inputs() -> None:
