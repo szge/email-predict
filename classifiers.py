@@ -1,13 +1,16 @@
 from scipy.stats import ttest_rel
-from sklearn.ensemble import AdaBoostClassifier
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, AdaBoostRegressor, BaggingClassifier, \
+    BaggingRegressor, ExtraTreesRegressor, GradientBoostingClassifier, \
+    GradientBoostingRegressor, RandomForestRegressor, VotingClassifier, VotingRegressor
 from sklearn.feature_selection import f_classif
 from sklearn.feature_selection import SelectKBest
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split, KFold
 from sklearn.neural_network import MLPClassifier
-from sklearn.naive_bayes import GaussianNB
+from sklearn.naive_bayes import GaussianNB, ComplementNB
 from sklearn.linear_model import SGDClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import LinearSVC
 
 import numpy as np
 import numpy.typing as npt
@@ -40,10 +43,11 @@ def find_best_classifier(output_dir, x_train, x_test, y_train, y_test) -> int:
 
     classifiers = [
         GaussianNB,
+        ComplementNB,
         RandomForestClassifier,
         AdaBoostClassifier,
-        # SGDClassifier,
-        # MLPClassifier
+        BaggingClassifier,
+        KNeighborsClassifier,
     ]
 
     with open(f"{output_dir}/results.txt", "w") as outf:

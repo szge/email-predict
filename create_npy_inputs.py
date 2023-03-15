@@ -3,6 +3,7 @@ import numpy as np
 import numpy.typing as npt
 from datetime import datetime
 from helper import *
+from line_profiler_pycharm import profile
 
 
 def create_npy_inputs() -> None:
@@ -12,7 +13,7 @@ def create_npy_inputs() -> None:
     np.save("npy/features.npy", features)
 
 
-NUM_FEATURES = 42
+NUM_FEATURES = 43
 
 
 def extract_features() -> npt.NDArray[np.float64]:
@@ -64,38 +65,53 @@ def extract_features() -> npt.NDArray[np.float64]:
     return feats
 
 
+# @profile
 def extract_event_features(event: dict, user_event_list: list, preferences: dict) -> npt.NDArray[np.float64]:
     feats = np.zeros(NUM_FEATURES)
     # print(event)
     # print(preferences)
 
     evt_ids = [evt["id"] for evt in user_event_list]
+    code_indices = {}
+    for i, evt in enumerate(user_event_list):
+        code = evt["code"]
+        if code not in code_indices:
+            code_indices[code] = []
+        code_indices[code].append(i)
+
     evt_i = evt_ids.index(int(event["id"]))
+    prev_evt_list = user_event_list[:evt_i]
 
-    # features 0-6: email preferences
-    for index, code in enumerate(pref_codes):
-        feats[index] = 1 if code in preferences else 0
+    # features 0-7: email preferences
+    for pref in preferences:
+        feats[get_pref_idx(pref)] = 1
 
-    # feature 7: number of previous user events, total
+    # feature 8: number of previous user events, total
     # since we sorted the events by timestamp, the index of the current event is the number of previous events
-    feats[7] = evt_i
+    feats[8] = evt_i
 
-    # features 8-18: number of previous user events per type
-    for index, code in enumerate(evt_codes):
-        feats[8 + index] = len([evt for evt in user_event_list[:evt_i] if evt["code"] == code])
+    # features 9-19: number of previous user events per type
+    for evt in prev_evt_list:
+        feats[9 + get_evt_idx(evt["code"])] += 1
 
-    # features 19-29: number of previous user events per type, normalized by total number of previous events
-    for index, code in enumerate(evt_codes):
-        feats[19 + index] = feats[8 + index] / feats[7] if feats[7] > 0 else 0
+    # features 20-30: number of previous user events per type, normalized by total number of previous events
+    for evt in prev_evt_list:
+        feats[20 + get_evt_idx(evt["code"])] += 1 / feats[8] if feats[8] > 0 else 0
 
-    # features 30-40: number of previous user events per type for the past 10 events
+    # features 31-41: number of previous user events per type for the past 10 events
     prev_10 = user_event_list[max(0, evt_i - 10):evt_i]
-    for index, code in enumerate(evt_codes):
-        feats[30 + index] = len([evt for evt in prev_10 if evt["code"] == code])
+    for evt in prev_10:
+        feats[31 + get_evt_idx(evt["code"])] += 1
 
-    # feature 41: time since first event
-    first_evt_dt = datetime.strptime(user_event_list[0]["timestamp"], "%Y-%m-%d %H:%M:%S")
-    curr_evt_dt = datetime.strptime(event["timestamp"], "%Y-%m-%d %H:%M:%S")
-    feats[41] = (curr_evt_dt - first_evt_dt).total_seconds()
+    # feature 42: time since first event
+    # this is much faster than using datetime.strptime
+    first_str = user_event_list[0]["timestamp"]
+    first_evt_dt = datetime(int(first_str[:4]), int(first_str[5:7]), int(first_str[8:10]), int(first_str[11:13]),
+                            int(first_str[14:16]), int(first_str[17:19]))
+    curr_str = event["timestamp"]
+    curr_evt_dt = datetime(int(curr_str[:4]), int(curr_str[5:7]), int(curr_str[8:10]), int(curr_str[11:13]),
+                           int(curr_str[14:16]), int(curr_str[17:19]))
+
+    feats[42] = (curr_evt_dt - first_evt_dt).total_seconds()
 
     return feats
