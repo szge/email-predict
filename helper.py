@@ -18,11 +18,3 @@ def get_pref_idx(code: str) -> int: return pref_code_to_idx[code]
 def get_pref_code_from_idx(idx: int) -> str: return pref_codes[idx]
 def get_pref_name_from_idx(idx: int) -> str: return pref_names[idx]
 def get_pref_name_from_code(code: str) -> str: return pref_names[get_pref_idx(code)]
-
-
-"""
-additional features:
-- arrange events for each user by time, and a feature can be the number of previous events
-- same as previous, except for the number of events of each type
-
-"""

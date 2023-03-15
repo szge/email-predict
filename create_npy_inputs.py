@@ -9,8 +9,18 @@ from helper import *
 def create_npy_inputs() -> None:
     # Create the inputs for the model, and save them as .npy files
     # columns 1-5 are the features, column 6 is the label
-    features = extract_features()
-    np.save("npy/features.npy", features)
+    # features = extract_features()
+    # np.save("npy/features.npy", features)
+    get_stats()
+
+
+def get_stats() -> None:
+    with open("output/stats.txt", "w") as outf:
+        features = np.load("npy/features.npy")
+        codes = features[:, -1]
+        outf.write("Event stats:\n")
+        for (code, code_name) in zip(evt_codes, evt_names):
+            outf.write(f"{code_name}: {round(sum(codes == get_evt_idx(code)) / len(codes), 3)}\n")
 
 
 NUM_FEATURES = 43
