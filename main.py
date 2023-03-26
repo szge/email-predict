@@ -4,6 +4,6 @@ from classifiers import *
 
 if __name__ == "__main__":
     # preproc(mode=Mode.PARTIAL)
-    # preproc(mode=Mode.FULL)
+    preproc(mode=Mode.FULL)
     # create_npy_inputs()
-    run_classifiers()
+    # run_classifiers()
