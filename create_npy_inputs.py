@@ -101,7 +101,7 @@ def extract_features() -> npt.NDArray[np.float64]:
             user_event_list = user_newsletter_map[user_id][int(_id)]
             feats[index] = np.append(
                 extract_event_features(user_event_list, preferences),
-                get_evt_idx("newsletter_sent")
+                user_has_read_newsletter(user_id, int(_id))
             )
 
     return feats
@@ -128,53 +128,75 @@ def user_has_read_newsletter(user_id: int, newsletter_id: int) -> bool:
     return False
 
 
-# @profile
-def extract_event_features(event: dict, user_event_list: list, preferences: dict) -> npt.NDArray[np.float64]:
+def extract_event_features(newsletter_id: int, user_id: int, preferences: dict) -> npt.NDArray[np.float64]:
     feats = np.zeros(NUM_FEATURES)
-    # print(event)
-    # print(preferences)
-
-    evt_ids = [evt["id"] for evt in user_event_list]
-    code_indices = {}
-    for i, evt in enumerate(user_event_list):
-        code = evt["code"]
-        if code not in code_indices:
-            code_indices[code] = []
-        code_indices[code].append(i)
-
-    evt_i = evt_ids.index(int(event["id"]))
-    prev_evt_list = user_event_list[:evt_i]
 
     # features 0-7: email preferences
     for pref in preferences:
-        feats[get_pref_idx(pref)] = 1
+        feats[get_evt_idx(pref)] = 1
 
-    # feature 8: number of previous user events, total
-    # since we sorted the events by timestamp, the index of the current event is the number of previous events
-    feats[8] = evt_i
+    # features 8: number of previous newsletters sent
 
-    # features 9-19: number of previous user events per type
-    for evt in prev_evt_list:
-        feats[9 + get_evt_idx(evt["code"])] += 1
+    # feature 9: number of previous newsletters opened
 
-    # features 20-30: number of previous user events per type, normalized by total number of previous events
-    for evt in prev_evt_list:
-        feats[20 + get_evt_idx(evt["code"])] += 1 / feats[8] if feats[8] > 0 else 0
+    # feature 10: percentage of previous newsletters opened
 
-    # features 31-41: number of previous user events per type for the past 10 events
-    prev_10 = user_event_list[max(0, evt_i - 10):evt_i]
-    for evt in prev_10:
-        feats[31 + get_evt_idx(evt["code"])] += 1
+    # feature 11: time since first newsletter sent
 
-    # feature 42: time since first event
-    # this is much faster than using datetime.strptime
-    first_str = user_event_list[0]["timestamp"]
-    first_evt_dt = datetime(int(first_str[:4]), int(first_str[5:7]), int(first_str[8:10]), int(first_str[11:13]),
-                            int(first_str[14:16]), int(first_str[17:19]))
-    curr_str = event["timestamp"]
-    curr_evt_dt = datetime(int(curr_str[:4]), int(curr_str[5:7]), int(curr_str[8:10]), int(curr_str[11:13]),
-                           int(curr_str[14:16]), int(curr_str[17:19]))
 
-    feats[42] = (curr_evt_dt - first_evt_dt).total_seconds()
+
+    # Spacy features
 
     return feats
+
+
+# @profile
+# def extract_event_features(event: dict, user_event_list: list, preferences: dict) -> npt.NDArray[np.float64]:
+#     feats = np.zeros(NUM_FEATURES)
+#     # print(event)
+#     # print(preferences)
+#
+#     evt_ids = [evt["id"] for evt in user_event_list]
+#     code_indices = {}
+#     for i, evt in enumerate(user_event_list):
+#         code = evt["code"]
+#         if code not in code_indices:
+#             code_indices[code] = []
+#         code_indices[code].append(i)
+#
+#     evt_i = evt_ids.index(int(event["id"]))
+#     prev_evt_list = user_event_list[:evt_i]
+#
+#     # features 0-7: email preferences
+#     for pref in preferences:
+#         feats[get_pref_idx(pref)] = 1
+#
+#     # feature 8: number of previous user events, total
+#     # since we sorted the events by timestamp, the index of the current event is the number of previous events
+#     feats[8] = evt_i
+#
+#     # features 9-19: number of previous user events per type
+#     for evt in prev_evt_list:
+#         feats[9 + get_evt_idx(evt["code"])] += 1
+#
+#     # features 20-30: number of previous user events per type, normalized by total number of previous events
+#     for evt in prev_evt_list:
+#         feats[20 + get_evt_idx(evt["code"])] += 1 / feats[8] if feats[8] > 0 else 0
+#
+#     # features 31-41: number of previous user events per type for the past 10 events
+#     prev_10 = user_event_list[max(0, evt_i - 10):evt_i]
+#     for evt in prev_10:
+#         feats[31 + get_evt_idx(evt["code"])] += 1
+#
+#     # feature 42: time since first event
+#     # this is much faster than using datetime.strptime
+#     first_str = user_event_list[0]["timestamp"]
+#     first_evt_dt = datetime(int(first_str[:4]), int(first_str[5:7]), int(first_str[8:10]), int(first_str[11:13]),
+#                             int(first_str[14:16]), int(first_str[17:19]))
+#     curr_str = event["timestamp"]
+#     curr_evt_dt = datetime(int(curr_str[:4]), int(curr_str[5:7]), int(curr_str[8:10]), int(curr_str[11:13]),
+#                            int(curr_str[14:16]), int(curr_str[17:19]))
+#
+#     feats[42] = (curr_evt_dt - first_evt_dt).total_seconds()
+#
+#     return feats
