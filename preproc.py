@@ -12,7 +12,7 @@ class Mode(Enum):
 
 def preproc(mode: Mode = Mode.FULL):
     print("Preprocessing...")
-    # preproc_events(mode)
+    preproc_events(mode)
     # preproc_users()
     preproc_newsletters()
 
@@ -23,15 +23,16 @@ def preproc_events(mode: Mode = Mode.FULL):
     csv_reader = csv.reader(file)
     events_json = {}
     for idx, event in enumerate(csv_reader):
-        (id, code, _, user_id, event_id, timestamp) = event
+        (_id, code, newsletter_id, user_id, event_id, timestamp) = event
         if code in evt_codes:
             event_json = {
-                "id": int(id),
+                "id": int(_id),
+                "newsletter_id": newsletter_id,
                 "code": code,
                 "user_id": int(user_id),
                 "timestamp": timestamp
             }
-            events_json[int(id)] = event_json
+            events_json[int(_id)] = event_json
         if (mode == Mode.PARTIAL) and (idx >= 500000):
             break
     file.close()
