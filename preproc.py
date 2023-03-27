@@ -13,18 +13,18 @@ class Mode(Enum):
 def preproc(mode: Mode = Mode.FULL):
     print("Preprocessing...")
     preproc_events(mode)
-    # preproc_users()
+    preproc_users()
     preproc_newsletters()
 
 
 def preproc_events(mode: Mode = Mode.FULL):
     print("Preprocessing events...")
-    file = open("input/emailevents_export.csv", "r")
+    file = open("a_input/emailevents_export.csv", "r")
     csv_reader = csv.reader(file)
     events_json = {}
     for idx, event in enumerate(csv_reader):
         (_id, code, newsletter_id, user_id, event_id, timestamp) = event
-        if code in evt_codes:
+        if code in evt_codes and int(newsletter_id) > 0:
             event_json = {
                 "id": int(_id),
                 "newsletter_id": newsletter_id,
@@ -37,14 +37,14 @@ def preproc_events(mode: Mode = Mode.FULL):
             break
     file.close()
 
-    fout = open("json/events.json", 'w')
+    fout = open("b_json/events.json", 'w')
     fout.write(json.dumps(events_json))
     print("Output events.json")
 
 
 def preproc_users():
     print("Preprocessing users...")
-    file = open("input/users_export.csv", "r")
+    file = open("a_input/users_export.csv", "r")
     csv_reader = csv.reader(file)
     users_json = {}
     for user in csv_reader:
@@ -53,14 +53,14 @@ def preproc_users():
         users_json[int(user_id)] = preferences
     file.close()
 
-    fout = open('json/users.json', 'w')
+    fout = open('b_json/users.json', 'w')
     fout.write(json.dumps(users_json))
     print("Output users.json")
 
 
 def preproc_newsletters():
     print("Preprocessing newsletters...")
-    file = open("input/newsletters.csv", "r", encoding="utf-8")
+    file = open("a_input/newsletters.csv", "r", encoding="utf-8")
     csv_reader = csv.reader(file)
     newsletters_json = {}
     next(csv_reader, None)  # skip the headers
@@ -80,6 +80,6 @@ def preproc_newsletters():
         except Exception as e:
             print(e)
 
-    fout = open("json/newsletters.json", "w")
+    fout = open("b_json/newsletters.json", "w")
     fout.write(json.dumps(newsletters_json))
     print("Output newsletters.json")
