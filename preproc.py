@@ -7,9 +7,6 @@ from bs4 import BeautifulSoup
 
 def preproc():
     print("Preprocessing...")
-    # newsletter_ids = preproc_newsletters()
-    # preproc_events(mode)
-    # preproc_users()
 
     # every event must refer to an existing newsletter and user
     # every user must have at least one event
@@ -46,7 +43,6 @@ def preproc():
         newsletter_id = int(newsletter_id)
         if code in evt_codes and newsletter_id in bad_newsletter_list and user_id in bad_user_list:
             event_json = {
-                "id": int(_id),
                 "newsletter_id": newsletter_id,
                 "code": code,
                 "user_id": user_id,
@@ -69,10 +65,7 @@ def preproc():
         user_id = int(user_id)
         if user_id in good_user_list:
             prefs = list(prefs)
-            users_json[user_id] = {
-                "id": user_id,
-                "prefs": prefs
-            }
+            users_json[user_id] = prefs
     file.close()
 
     fout = open("b_json/users.json", 'w')

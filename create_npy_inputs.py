@@ -24,6 +24,21 @@ def get_stats() -> None:
 
 NUM_FEATURES = 43
 
+# {
+#     user_id: {
+#         opened: [newsletter_id1, ...],
+#         unopened: [newsletter_id1, ...],
+#         newsletters: {
+#             newsletter_id1: [
+#                 event1,
+#                 ...
+#             ],
+#             ...
+#         }
+#     }
+# }
+user_newsletter_events = {}
+
 
 def extract_features() -> npt.NDArray[np.float64]:
     user_data_file = open("b_json/users.json", "r")
@@ -34,86 +49,60 @@ def extract_features() -> npt.NDArray[np.float64]:
     event_data = json.load(event_data_file)  # maps event id (str) to event (dict)
     event_data_file.close()
 
-    newsletter_data_file = open("b_json/newsletters.json", "r")
-    newsletter_data = json.load(newsletter_data_file)  # maps newsletter id (str) to newsletter (dict)
-    newsletter_data_file.close()
+    # we don't need newspaper data for this part
+    # newsletter_data_file = open("b_json/newsletters.json", "r")
+    # newsletter_data = json.load(newsletter_data_file)  # maps newsletter id (str) to newsletter (dict)
+    # newsletter_data_file.close()
 
-    user_newsletter_events = {}  # dict user -> newsletter ids -> events
-    user_newsletters = {}  # dict user -> newsletter ids
-    user_ids = {}  # set
-
-    newsletter_ids = set([int(_id) for _id in newsletter_data.keys()])
-    temp_user_ids = set([int(event_datum["user_id"]) for event_datum in event_data.values()
-                         if int(event_datum["newsletter_id"]) in newsletter_ids])
-    # guarantee that user_ids only contains users with events
-    user_ids = set([user_id for user_id in user_prefs.keys() if user_id in temp_user_ids])
-
-    user_ids = 4
-
-    newsletter_sent_to_user = {}  # newsletter id -> user ids
+    # newsletter_ids = set([int(_id) for _id in newsletter_data.keys()])
+    # user_ids = set([int(user) for user in user_prefs.keys()])
 
     print("Creating user-newsletter-events map...")
-    # count = 0
-    # for _id, newsletter in newsletter_data.items():
-    #     # get all events with newsletter_id == _id
-    #     _id = int(_id)
-    #     for event in event_data.values():
-    #         newsletter_id = int(event["newsletter_id"])
-    #         if newsletter_id == _id:
-    #             # get user_id
-    #             user_id = int(event["user_id"])
-    #             if user_id not in user_newsletter_events:
-    #                 user_newsletter_events[user_id] = {}
-    #             if _id not in user_newsletter_events[user_id]:
-    #                 user_newsletter_events[user_id][_id] = []
-    #             user_newsletter_events[user_id][_id].append(event)
-    #             if _id not in newsletter_sent_to_user:
-    #                 newsletter_sent_to_user[_id] = []
-    #             newsletter_sent_to_user[_id].append(user_id)
-    #
-    #             if user_id not in user_newsletters:
-    #                 user_newsletters[user_id] = {
-    #                     "unopened": [],
-    #                     "opened": [],
-    #                 }
-    #             if _id not in user_newsletters[user_id]["unopened"]:
-    #                 user_newsletters[user_id]["unopened"].append(_id)
-    #
-    #             count += 1
+    for event_id, event in event_data.items():
+        user_id = int(event["user_id"])
+        newsletter_id = int(event["newsletter_id"])
+        if user_id not in user_newsletter_events:
+            user_newsletter_events[user_id] = {}
+            user_newsletter_events[user_id]["opened"] = set()
+            user_newsletter_events[user_id]["unopened"] = set()
+            user_newsletter_events[user_id]["newsletters"] = {}
+        if newsletter_id not in user_newsletter_events[user_id]["newsletters"]:
+            user_newsletter_events[user_id]["newsletters"][newsletter_id] = []
+        user_newsletter_events[user_id]["newsletters"][newsletter_id].append(event)
 
-    print("Creating user-newsletter map...")
-    # for user_id, newsletters in user_newsletters.items():
-    #     for newsletter_id in newsletters["unopened"]:
-    #         if user_has_read_newsletter(user_id, newsletter_id):
-    #             user_newsletters[user_id]["unopened"].remove(newsletter_id)
-    #             user_newsletters[user_id]["opened"].append(newsletter_id)
-    #     # sort by id
-    #     user_newsletters[user_id]["unopened"].sort()
-    #     user_newsletters[user_id]["opened"].sort()
+        code = event["code"]
+        if code in evt_codes:
+            if code in opened_codes:
+                if newsletter_id in user_newsletter_events[user_id]["unopened"]:
+                    user_newsletter_events[user_id]["unopened"].remove(newsletter_id)
+                user_newsletter_events[user_id]["opened"].add(newsletter_id)
+            else:
+                user_newsletter_events[user_id]["unopened"].add(newsletter_id)
 
     print("Sorting events by timestamp...")
-    # for user_id in user_newsletter_events:
-    #     for newsletter_id in user_newsletter_events[user_id]:
-    #         user_newsletter_events[user_id][newsletter_id].sort(
-    #             key=lambda ev: datetime.strptime(ev["timestamp"], "%Y-%m-%d %H:%M:%S")
-    #         )
+    for user_id in user_newsletter_events:
+        for newsletter_id in user_newsletter_events[user_id]["newsletters"]:
+            user_newsletter_events[user_id]["newsletters"][newsletter_id].sort(
+                key=lambda ev: datetime.strptime(ev["timestamp"], "%Y-%m-%d %H:%M:%S")
+            )
 
     print("Creating features...")
+
     # construct feats array with size because appending is O(n*k^2)
+    # above as one-liner
+    count = sum([len(user_info["newsletters"]) for user_id, user_info in user_newsletter_events.items()])
+
     feats = np.zeros((count, NUM_FEATURES + 1))
 
     # extract features
     print("Extracting features...")
-    # for index, (_id, newsletter) in enumerate(newsletter_data.items()):
-    #     _id = int(_id)
-    #     if _id in newsletter_sent_to_user:
-    #         for user_id in newsletter_sent_to_user[int(_id)]:  # newsletter id
-    #             if str(user_id) in user_prefs:
-    #                 preferences = user_prefs[str(user_id)]
-    #                 feats[index] = np.append(
-    #                     extract_event_features(_id, user_id, preferences),
-    #                     user_has_read_newsletter(user_id, int(_id))
-    #                 )
+    for user_id, user_info in user_newsletter_events.items():
+        for newsletter_id in user_info["newsletters"]:
+            preferences = user_prefs[user_id]
+            feats[count] = np.append(
+                extract_event_features(user_id, user_info, newsletter_id, preferences),
+                user_has_read_newsletter(user_id, newsletter_id)
+            )
 
     np.set_printoptions(threshold=np.inf)
     print(feats[-10:, :])
@@ -151,7 +140,12 @@ def get_time_user_sent_newsletter(user_id: int, newsletter_id: int) -> datetime:
     )
 
 
-def extract_event_features(newsletter_id: int, user_id: int, preferences: dict) -> npt.NDArray[np.float64]:
+def extract_event_features(
+        user_id: int,
+        user_info: dict,
+        newsletter_id: int,
+        preferences: dict
+) -> npt.NDArray[np.float64]:
     feats = np.zeros(NUM_FEATURES)
 
     # features 0-7: email preferences
