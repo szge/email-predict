@@ -11,6 +11,7 @@ import time
 import matplotlib.pyplot as plt
 
 from helper import *
+from create_npy_inputs import feature_names
 
 np.random.seed(420)
 
@@ -141,7 +142,7 @@ def run_classifiers():
     # 70% training, 15% validation, 15% testing
 
     # Run classifiers on the data
-    find_best_classifier(x_train, x_val, y_train, y_val)
+    # find_best_classifier(x_train, x_val, y_train, y_val)
 
     # hyperparameter tuning
     best_hyperparameters = rfc_hyperparameter_tuning(x_train, x_val, y_train, y_val)
@@ -153,3 +154,17 @@ def run_classifiers():
     acc = accuracy(cm)
     print(f"RandomForestClassifier best hyperparameters accuracy on test data: {round(acc, 4)}")
     save_results(f"RandomForestClassifier_best_hyperparameters", cm)
+
+    # feature importance
+    importances = clf.feature_importances_
+    std = np.std([tree.feature_importances_ for tree in clf.estimators_], axis=0)
+    indices = np.argsort(importances)[::-1]
+
+    # Print the feature ranking
+    print("Feature ranking:")
+
+    with open("e_output/results.txt", "a") as outf:
+        for f in range(x_train.shape[1]):
+            feature_string = f"{f + 1}. {feature_names[indices[f]]} ({importances[indices[f]]})"
+            print(feature_string)
+            outf.write(feature_string + "\n")

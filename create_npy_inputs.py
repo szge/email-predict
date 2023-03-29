@@ -153,6 +153,22 @@ def get_time_user_sent_newsletter(user_id: int, newsletter_id: int) -> datetime:
     )
 
 
+feature_names = [
+    "Email pref: Bounced",
+    "Email pref: Unsubscribed",
+    "Email pref: Active",
+    "Email pref: Subscribed to daily newsletter",
+    "Email pref: Subscribed to weekly newsletter",
+    "Email pref: Not sure, most likely not active",
+    "Email pref: Not sure, not being used atm",
+    "Email pref: weird code",
+    "Number of previous newsletters sent",
+    "Number of previous newsletters opened",
+    "Percentage of previous newsletters opened",
+    "Time since first newsletter sent",
+]
+
+
 def extract_event_features(
         user_id: int,
         user_info: dict,
@@ -185,8 +201,6 @@ def extract_event_features(
             print(first_newsletter_time, current_newsletter_time)
     else:
         feats[11] = 0
-
-    # feature 12:
 
     # BERT features
 
