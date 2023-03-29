@@ -38,7 +38,7 @@ NUM_FEATURES = 12
 #     }
 # }
 user_newsletter_events = {}
-user_events = {}  # maps user id (int) to list of all events (dict)
+user_events = {}  # maps user id (int) to list of all events (array)
 
 
 def extract_features() -> npt.NDArray[np.float64]:
@@ -55,13 +55,15 @@ def extract_features() -> npt.NDArray[np.float64]:
     # newsletter_data = json.load(newsletter_data_file)  # maps newsletter id (str) to newsletter (dict)
     # newsletter_data_file.close()
 
-    # newsletter_ids = set([int(_id) for _id in newsletter_data.keys()])
-    # user_ids = set([int(user) for user in user_prefs.keys()])
-
     print("Creating user-newsletter-events map...")
     for event_id, event in event_data.items():
         user_id = int(event["user_id"])
         newsletter_id = int(event["newsletter_id"])
+
+        if user_id not in user_events:
+            user_events[user_id] = []
+        user_events[user_id].append(event)
+
         if user_id not in user_newsletter_events:
             user_newsletter_events[user_id] = {}
             user_newsletter_events[user_id]["opened"] = []
@@ -89,6 +91,11 @@ def extract_features() -> npt.NDArray[np.float64]:
         user_info["opened"].sort()
         user_info["unopened"].sort()
 
+    for user_id in user_events:
+        user_events[user_id].sort(
+            key=lambda ev: datetime.strptime(ev["timestamp"], "%Y-%m-%d %H:%M:%S")
+        )
+
     print("Creating features...")
 
     # construct feats array with size because appending is O(n*k^2)
@@ -109,10 +116,10 @@ def extract_features() -> npt.NDArray[np.float64]:
             )
             count += 1
 
-    np.set_printoptions(threshold=np.inf)
-    print(feats[-10:, :])
-    np.set_printoptions(threshold=np.inf)
-    print(feats[:10, :])
+    # np.set_printoptions(threshold=np.inf)
+    # print(feats[-10:, :])
+    # np.set_printoptions(threshold=np.inf)
+    # print(feats[:10, :])
 
     return feats
 
@@ -170,21 +177,14 @@ def extract_event_features(
     feats[10] = feats[9] / feats[8]
 
     # feature 11: time since first newsletter sent
-    if len(user_info["opened"]) > 0:
-        first_newsletter_id = user_info["opened"][0]
-        if len(user_info["unopened"]) > 0:
-            if user_info["unopened"][0] < first_newsletter_id:
-                first_newsletter_id = user_info["unopened"][0]
+    if user_id in user_events:
+        first_newsletter_time = datetime.strptime(user_events[user_id][0]["timestamp"], "%Y-%m-%d %H:%M:%S")
+        current_newsletter_time = get_time_user_sent_newsletter(user_id, newsletter_id)
+        feats[11] = (current_newsletter_time - first_newsletter_time).seconds
+        if feats[11] < 0:
+            print(first_newsletter_time, current_newsletter_time)
     else:
-        first_newsletter_id = user_info["unopened"][0]
-    first_newsletter_time = get_time_user_sent_newsletter(user_id, first_newsletter_id)
-    current_newsletter_time = get_time_user_sent_newsletter(user_id, newsletter_id)
-    # in seconds
-    feats[11] = (current_newsletter_time - first_newsletter_time).total_seconds()
-    if feats[11] < 0:
-        print("first id:", first_newsletter_id, "events", user_newsletter_events[user_id]["newsletters"][first_newsletter_id])
-        print("current id:", newsletter_id, "events", user_newsletter_events[user_id]["newsletters"][newsletter_id])3
-
+        feats[11] = 0
 
     # BERT features
 

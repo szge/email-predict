@@ -4,5 +4,5 @@ from classifiers import *
 
 if __name__ == "__main__":
     # preproc()
-    create_npy_inputs()
-    # run_classifiers()
+    # create_npy_inputs()
+    run_classifiers()

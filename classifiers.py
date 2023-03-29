@@ -47,7 +47,7 @@ def find_best_classifier(x_train, x_test, y_train, y_test) -> int:
     ]
 
     # clear results file
-    with open("output/results.txt", "w") as outf:
+    with open("e_output/results.txt", "w") as outf:
         outf.write("")
 
     for idx, _class in enumerate(classifiers):
@@ -82,7 +82,7 @@ def find_best_classifier(x_train, x_test, y_train, y_test) -> int:
 def save_results(model_name: str, cm: any):
     acc = accuracy(cm)
     class_acc = cm.diagonal()/cm.sum(axis=1)
-    with open("output/results.txt", "a") as outf:
+    with open("e_output/results.txt", "a") as outf:
         outf.write(f"{model_name} accuracy: {round(acc, 4)}\n")
         for i in range(len(class_acc)):
             outf.write(f"{evt_names[i]} accuracy: {round(class_acc[i], 4)}\n")
@@ -101,11 +101,11 @@ def save_results(model_name: str, cm: any):
     plt.xticks(rotation=90)
     # padding
     plt.tight_layout()
-    plt.savefig(f"output/{model_name}.png")
+    plt.savefig(f"e_output/{model_name}.png")
 
 
 def run_classifiers():
-    data = np.load("npy/features.npy")
+    data = np.load("d_npy/features.npy")
     x_train, x_test, y_train, y_test = train_test_split(data[:, :-1], data[:, -1], test_size=0.2, random_state=420)
 
     # Run classifiers on the data
