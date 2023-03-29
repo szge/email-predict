@@ -85,14 +85,14 @@ def save_results(model_name: str, cm: any):
     with open("e_output/results.txt", "a") as outf:
         outf.write(f"{model_name} accuracy: {round(acc, 4)}\n")
         for i in range(len(class_acc)):
-            outf.write(f"{evt_names[i]} accuracy: {round(class_acc[i], 4)}\n")
+            outf.write(f"{class_labels[i]} accuracy: {round(class_acc[i], 4)}\n")
         outf.write("\n")
     # Plot confusion matrix
-    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=evt_names)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=class_labels)
     disp.plot()
     # remove values from confusion matrix
-    for i in range(len(evt_codes)):
-        for j in range(len(evt_codes)):
+    for i in range(len(class_labels)):
+        for j in range(len(class_labels)):
             disp.text_[i, j].set_text("")
     # increase size of confusion matrix
     fig = plt.gcf()

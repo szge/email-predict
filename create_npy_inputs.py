@@ -9,17 +9,17 @@ from helper import *
 def create_npy_inputs() -> None:
     # Create the inputs for the model, and save them as .npy files
     features = extract_features()
-    # np.save("npy/features.npy", features)
-    # get_stats()
+    np.save("d_npy/features.npy", features)
+    get_stats()
 
 
 def get_stats() -> None:
     with open("e_output/stats.txt", "w") as outf:
-        features = np.load("npy/features.npy")
+        features = np.load("d_npy/features.npy")
         codes = features[:, -1]
         outf.write("Event stats:\n")
-        for (code, code_name) in zip(evt_codes, evt_names):
-            outf.write(f"{code_name}: {round(sum(codes == get_evt_idx(code)) / len(codes), 3)}\n")
+        for (code, code_name) in zip([0, 1], ["unopened", "opened"]):
+            outf.write(f"{code_name}: {round(sum(codes == code) / len(codes), 3)}\n")
 
 
 NUM_FEATURES = 12

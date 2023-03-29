@@ -1,6 +1,7 @@
 # this helps map between the codes and explanations for events in emailevents_export.csv
 evt_codes = ["S", "B", "H", "d", "D", "L", "F", "O", "C", "U", "A"]
 opened_codes = ["F", "O", "C", "U", "A"]
+class_labels = ["unopened", "opened"]
 evt_names = ["Sent", "Soft bounce", "Hard bounce", "Deferred", "Delivered", "Loaded by proxy", "First opening",
              "Opened", "Clicked", "Unsubscribed", "Abuse complaint"]
 evt_code_to_idx = {code: idx for idx, code in enumerate(evt_codes)}
