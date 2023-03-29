@@ -186,6 +186,8 @@ def extract_event_features(
     else:
         feats[11] = 0
 
+    # feature 12:
+
     # BERT features
 
     return feats

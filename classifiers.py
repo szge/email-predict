@@ -1,6 +1,6 @@
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, BaggingClassifier
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
-from sklearn.model_selection import train_test_split, KFold
+from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier
 from sklearn.naive_bayes import GaussianNB, ComplementNB
 
@@ -30,7 +30,7 @@ def precision(c: npt.NDArray[np.float64]) -> list[float]:
     return [c[k][k] / sum([c[i][k] for i in range(len(c[0]))]) for k in range(len(c))]
 
 
-def find_best_classifier(x_train, x_test, y_train, y_test) -> int:
+def find_best_classifier(x_train, x_test, y_train, y_test) -> None:
     # Find the best classifier for the data
     print("Finding best classifier...")
 
@@ -76,10 +76,33 @@ def find_best_classifier(x_train, x_test, y_train, y_test) -> int:
 
     print(f"Best classifier: {classifiers[i_best].__name__} with accuracy {round(acc_best, 2)}")
 
-    return i_best
+
+def rfc_hyperparameter_tuning(x_train, x_test, y_train, y_test) -> dict:
+    print("RandomForestClassifier hyperparameter tuning...")
+    # hyperparameter tuning
+    best_hyperparameters = {
+        "max_depth": 0,
+        "n_estimators": 0,
+        "accuracy": 0
+    }
+    for i in [1, 5, 10]:
+        for j in [1, 5, 10]:
+            clf = RandomForestClassifier(max_depth=i, n_estimators=j)
+            clf.fit(x_train, y_train)
+            y_pred = clf.predict(x_test)
+            cm = confusion_matrix(y_test, y_pred, normalize="all")
+            acc = accuracy(cm)
+            print(f"max_depth: {i} n_estimators: {j} accuracy: {round(acc, 4)}")
+            save_results(f"RandomForestClassifier_max_depth_{i}_n_estimators_{j}", cm, draw_cm=False)
+            if acc > best_hyperparameters["accuracy"]:
+                best_hyperparameters["max_depth"] = i
+                best_hyperparameters["n_estimators"] = j
+                best_hyperparameters["accuracy"] = acc
+
+    return best_hyperparameters
 
 
-def save_results(model_name: str, cm: any):
+def save_results(model_name: str, cm: any, draw_cm: bool = True):
     acc = accuracy(cm)
     class_acc = cm.diagonal()/cm.sum(axis=1)
     with open("e_output/results.txt", "a") as outf:
@@ -87,26 +110,46 @@ def save_results(model_name: str, cm: any):
         for i in range(len(class_acc)):
             outf.write(f"{class_labels[i]} accuracy: {round(class_acc[i], 4)}\n")
         outf.write("\n")
-    # Plot confusion matrix
-    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=class_labels)
-    disp.plot()
-    # remove values from confusion matrix
-    for i in range(len(class_labels)):
-        for j in range(len(class_labels)):
-            disp.text_[i, j].set_text("")
-    # increase size of confusion matrix
-    fig = plt.gcf()
-    fig.set_size_inches(10, 10)
-    # make x axis labels vertical
-    plt.xticks(rotation=90)
-    # padding
-    plt.tight_layout()
-    plt.savefig(f"e_output/{model_name}.png")
+
+    if draw_cm:
+        # Plot confusion matrix
+        disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=class_labels)
+        disp.plot()
+        # remove values from confusion matrix
+        for i in range(len(class_labels)):
+            for j in range(len(class_labels)):
+                disp.text_[i, j].set_text("")
+        # increase size of confusion matrix
+        fig = plt.gcf()
+        fig.set_size_inches(10, 10)
+        # make x axis labels vertical
+        plt.xticks(rotation=90)
+        # padding
+        plt.tight_layout()
+        plt.savefig(f"e_output/{model_name}.png")
+        plt.close()
 
 
 def run_classifiers():
     data = np.load("d_npy/features.npy")
-    x_train, x_test, y_train, y_test = train_test_split(data[:, :-1], data[:, -1], test_size=0.2, random_state=420)
+
+    # split data into training and testing
+    x_train, x_test, y_train, y_test = train_test_split(data[:, :-1], data[:, -1], test_size=0.7, random_state=420)
+
+    # split testing data into validation and testing
+    x_test, x_val, y_test, y_val = train_test_split(x_test, y_test, test_size=0.5, random_state=420)
+    # 70% training, 15% validation, 15% testing
 
     # Run classifiers on the data
-    i_best = find_best_classifier(x_train, x_test, y_train, y_test)
+    find_best_classifier(x_train, x_val, y_train, y_val)
+
+    # hyperparameter tuning
+    best_hyperparameters = rfc_hyperparameter_tuning(x_train, x_val, y_train, y_val)
+    # run the best hyperparameters on testing data
+    clf = RandomForestClassifier(max_depth=best_hyperparameters["max_depth"], n_estimators=best_hyperparameters["n_estimators"])
+    clf.fit(x_train, y_train)
+    y_pred = clf.predict(x_test)
+    cm = confusion_matrix(y_test, y_pred, normalize="all")
+    acc = accuracy(cm)
+    print(f"RandomForestClassifier best hyperparameters accuracy on test data: {round(acc, 4)}")
+    save_results(f"RandomForestClassifier_best_hyperparameters", cm)
