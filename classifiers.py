@@ -3,6 +3,7 @@ from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier
 from sklearn.naive_bayes import GaussianNB, ComplementNB
+from sklearn.inspection import PartialDependenceDisplay
 
 import numpy as np
 import numpy.typing as npt
@@ -157,7 +158,6 @@ def run_classifiers():
 
     # feature importance
     importances = clf.feature_importances_
-    std = np.std([tree.feature_importances_ for tree in clf.estimators_], axis=0)
     indices = np.argsort(importances)[::-1]
 
     # Print the feature ranking
@@ -168,3 +168,9 @@ def run_classifiers():
             feature_string = f"{f + 1}. {feature_names[indices[f]]} ({importances[indices[f]]})"
             print(feature_string)
             outf.write(feature_string + "\n")
+
+    # plot_partial_dependence(clf, x_train, indices[:5], feature_names=feature_names, n_jobs=4)
+    display = PartialDependenceDisplay.from_estimator(clf, x_train, indices[:5], feature_names=feature_names)
+    display.plot()
+    plt.savefig(f"e_output/feature_importance.png")
+    plt.close()
