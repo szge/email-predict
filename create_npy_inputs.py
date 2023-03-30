@@ -3,6 +3,7 @@ import numpy as np
 import numpy.typing as npt
 from datetime import datetime
 from helper import *
+from embeddings import *
 # from line_profiler_pycharm import profile
 
 
@@ -49,11 +50,16 @@ def extract_features() -> npt.NDArray[np.float64]:
     event_data_file = open("b_json/events.json", "r")
     event_data = json.load(event_data_file)  # maps event id (str) to event (dict)
     event_data_file.close()
+    
 
     # we don't need newspaper data for this part
     # newsletter_data_file = open("b_json/newsletters.json", "r")
     # newsletter_data = json.load(newsletter_data_file)  # maps newsletter id (str) to newsletter (dict)
     # newsletter_data_file.close()
+    
+    print("Load newsletter embeddings")
+    newsletter_embeddings = generate_newspaper_embeddings()
+    print("Embeddings loaded")
 
     print("Creating user-newsletter-events map...")
     for event_id, event in event_data.items():
@@ -102,7 +108,7 @@ def extract_features() -> npt.NDArray[np.float64]:
     # above as one-liner
     count = sum([len(user_info["newsletters"]) for user_id, user_info in user_newsletter_events.items()])
 
-    feats = np.zeros((count, NUM_FEATURES + 1))
+    feats = np.zeros((count, NUM_FEATURES + 768 + 1))
 
     # extract features
     count = 0
@@ -111,7 +117,7 @@ def extract_features() -> npt.NDArray[np.float64]:
         for newsletter_id in user_info["newsletters"]:
             preferences = user_prefs[str(user_id)]
             feats[count] = np.append(
-                extract_event_features(user_id, user_info, newsletter_id, preferences),
+                extract_event_features(user_id, user_info, newsletter_id, preferences, newsletter_embeddings),
                 user_has_read_newsletter(user_id, newsletter_id)
             )
             count += 1
@@ -152,7 +158,6 @@ def get_time_user_sent_newsletter(user_id: int, newsletter_id: int) -> datetime:
         "%Y-%m-%d %H:%M:%S"
     )
 
-
 feature_names = [
     "Email pref: Bounced",
     "Email pref: Unsubscribed",
@@ -166,6 +171,7 @@ feature_names = [
     "Number of previous newsletters opened",
     "Percentage of previous newsletters opened",
     "Time since first newsletter sent",
+    
 ]
 
 
@@ -173,35 +179,39 @@ def extract_event_features(
         user_id: int,
         user_info: dict,
         newsletter_id: int,
-        preferences: dict
+        preferences: dict,
+        newsletter_embeddings: dict
 ) -> npt.NDArray[np.float64]:
-    feats = np.zeros(NUM_FEATURES)
+    num_feats = np.zeros(NUM_FEATURES)
 
     # features 0-7: email preferences
     for pref in preferences:
         if pref in evt_codes:
-            feats[get_evt_idx(pref)] = 1
+            num_feats[get_evt_idx(pref)] = 1
 
     # features 8: number of previous newsletters sent
     # feats[8] = len(user_newsletters[user_id]["opened"]) + len(user_newsletters[user_id]["unopened"])
-    feats[8] = len(user_info["newsletters"])
+    num_feats[8] = len(user_info["newsletters"])
 
     # feature 9: number of previous newsletters opened
-    feats[9] = len([x for x in user_info["opened"] if x < newsletter_id])
+    num_feats[9] = len([x for x in user_info["opened"] if x < newsletter_id])
 
     # feature 10: percentage of previous newsletters opened
-    feats[10] = feats[9] / feats[8]
+    num_feats[10] = num_feats[9] / num_feats[8]
 
     # feature 11: time since first newsletter sent
     if user_id in user_events:
         first_newsletter_time = datetime.strptime(user_events[user_id][0]["timestamp"], "%Y-%m-%d %H:%M:%S")
         current_newsletter_time = get_time_user_sent_newsletter(user_id, newsletter_id)
-        feats[11] = (current_newsletter_time - first_newsletter_time).seconds
-        if feats[11] < 0:
+        num_feats[11] = (current_newsletter_time - first_newsletter_time).seconds
+        if num_feats[11] < 0:
             print(first_newsletter_time, current_newsletter_time)
     else:
-        feats[11] = 0
+        num_feats[11] = 0
 
     # BERT features
+    
+    bert_features = newsletter_embeddings[str(newsletter_id)]
+    feats = np.concatenate((num_feats, bert_features), axis=0)
 
     return feats

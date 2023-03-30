@@ -41,7 +41,6 @@ def find_best_classifier(x_train, x_test, y_train, y_test) -> None:
 
     classifiers = [
         GaussianNB,
-        ComplementNB,
         RandomForestClassifier,
         AdaBoostClassifier,
         BaggingClassifier,
@@ -55,7 +54,7 @@ def find_best_classifier(x_train, x_test, y_train, y_test) -> None:
     for idx, _class in enumerate(classifiers):
         start_time = time.time()
         if _class == RandomForestClassifier:
-            clf = RandomForestClassifier(max_depth=5, n_estimators=10)
+            clf = RandomForestClassifier(max_depth=10, n_estimators=10)
         elif _class == MLPClassifier:
             clf = MLPClassifier(alpha=0.05)
         else:
@@ -143,7 +142,7 @@ def run_classifiers():
     # 70% training, 15% validation, 15% testing
 
     # Run classifiers on the data
-    # find_best_classifier(x_train, x_val, y_train, y_val)
+    find_best_classifier(x_train, x_val, y_train, y_val)
 
     # hyperparameter tuning
     best_hyperparameters = rfc_hyperparameter_tuning(x_train, x_val, y_train, y_val)
@@ -156,15 +155,16 @@ def run_classifiers():
     print(f"RandomForestClassifier best hyperparameters accuracy on test data: {round(acc, 4)}")
     save_results(f"RandomForestClassifier_best_hyperparameters", cm)
 
-    # feature importance
+    #feature importance
     importances = clf.feature_importances_
     indices = np.argsort(importances)[::-1]
+    
 
-    # Print the feature ranking
+    #Print the feature ranking
     print("Feature ranking:")
 
     with open("e_output/results.txt", "a") as outf:
-        for f in range(x_train.shape[1]):
+        for f in range(12):
             feature_string = f"{f + 1}. {feature_names[indices[f]]} ({importances[indices[f]]})"
             print(feature_string)
             outf.write(feature_string + "\n")
