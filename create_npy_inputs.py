@@ -10,8 +10,8 @@ from embeddings import *
 def create_npy_inputs() -> None:
     # Create the inputs for the model, and save them as .npy files
     features = extract_features()
-    np.save("d_npy/features.npy", features)
-    get_stats()
+    # np.save("d_npy/features.npy", features)
+    # get_stats()
 
 
 def get_stats() -> None:
@@ -51,11 +51,10 @@ def extract_features() -> npt.NDArray[np.float64]:
     event_data = json.load(event_data_file)  # maps event id (str) to event (dict)
     event_data_file.close()
     
-
-    # we don't need newspaper data for this part
-    # newsletter_data_file = open("b_json/newsletters.json", "r")
-    # newsletter_data = json.load(newsletter_data_file)  # maps newsletter id (str) to newsletter (dict)
-    # newsletter_data_file.close()
+    newsletters_file = open("b_json/newsletters.json", "r")
+    newsletters= json.load(newsletters_file)  # maps event id (str) to event (dict)
+    newsletters_file.close()
+    
     
     print("Load newsletter embeddings")
     newsletter_embeddings = generate_newspaper_embeddings()
@@ -101,8 +100,17 @@ def extract_features() -> npt.NDArray[np.float64]:
         user_events[user_id].sort(
             key=lambda ev: datetime.strptime(ev["timestamp"], "%Y-%m-%d %H:%M:%S")
         )
+        
+    #Compute proportion of open vs unopened for each newsletter
+    newsletter_proportions = get_newsletter_proportions(user_newsletter_events, newsletters, user_prefs)
+    
+    #Create file with newsletter proportions along with titles which will be used for fine-tuning BERT
+    newsletters_full_data = generate_newsletter_full_data(newsletters, newsletter_proportions)
+    fout = open("b_json/newsletters_full_data.json", "w")
+    fout.write(json.dumps(newsletters_full_data))
 
     print("Creating features...")
+
 
     # construct feats array with size because appending is O(n*k^2)
     # above as one-liner
@@ -157,6 +165,33 @@ def get_time_user_sent_newsletter(user_id: int, newsletter_id: int) -> datetime:
         user_newsletter_events[user_id]["newsletters"][newsletter_id][0]["timestamp"],
         "%Y-%m-%d %H:%M:%S"
     )
+    
+def get_newsletter_proportions(user_newsletter_events: dict, newsletters: dict, user_prefs: dict) -> dict:
+    newsletters_proportion = dict.fromkeys(newsletters)
+    num_users = len(user_prefs.keys())
+    
+    for k in newsletters_proportion:
+        newsletters_proportion[k] = 0
+        
+    for user in user_newsletter_events:
+        d = user_newsletter_events[user]
+        opened_newsletters = set(d['newsletters'])
+        for n in opened_newsletters:
+            newsletters_proportion[n] +=1
+    for k in newsletters_proportion:
+        newsletters_proportion[k] = float((newsletters_proportion[k])/num_users)
+    
+    return newsletters_proportion
+
+def generate_newsletter_full_data(newsletters: dict, newsletters_proportion: dict) -> dict:
+    newsletters_full_data = dict.fromkeys(newsletters)
+    for k in newsletters_full_data:
+        newsletters_full_data[k] = {
+            "title": newsletters[k]["title"],
+            "headlines": newsletters[k]["headlines"],
+            "proportion": newsletters_proportion[k],
+        }
+    return newsletters_full_data
 
 feature_names = [
     "Email pref: Bounced",
