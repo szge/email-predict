@@ -4,6 +4,8 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 import json
 from sklearn.model_selection import train_test_split
+import matplotlib.pyplot as plt
+
 
 
 class NewsletterDataset(Dataset):
@@ -155,3 +157,14 @@ def finetune_bert_model() -> None:
 
     # print the results
     print(f'Test Loss: {test_loss:.6f}')
+    
+    #plot training and validation loss
+    
+    epochs = [i for i in range(1, 51)]
+    plt.plot(epochs, train_losses, label='Train Loss')
+    plt.plot(epochs, val_losses, label='Validation Loss')
+    plt.title('Train and Validation Loss vs. Epochs')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.savefig('e_output/train_validation_loss_bert.png')
