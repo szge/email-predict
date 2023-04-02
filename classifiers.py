@@ -143,13 +143,18 @@ def run_classifiers():
 
     # Run classifiers on the data
     find_best_classifier(x_train, x_val, y_train, y_val)
-
+    
+    #subset to first 12 features since we are not using embeddings for this part
+    x_train_subset = x_train[:,:12]
+    x_val_subset = x_val[:,:12]
+    x_test_subset = x_test[:,:12]
+    
     # hyperparameter tuning
-    best_hyperparameters = rfc_hyperparameter_tuning(x_train, x_val, y_train, y_val)
+    best_hyperparameters = rfc_hyperparameter_tuning(x_train_subset, x_val_subset, y_train, y_val)
     # run the best hyperparameters on testing data
     clf = RandomForestClassifier(max_depth=best_hyperparameters["max_depth"], n_estimators=best_hyperparameters["n_estimators"])
-    clf.fit(x_train, y_train)
-    y_pred = clf.predict(x_test)
+    clf.fit(x_train_subset, y_train)
+    y_pred = clf.predict(x_test_subset)
     cm = confusion_matrix(y_test, y_pred, normalize="all")
     acc = accuracy(cm)
     print(f"RandomForestClassifier best hyperparameters accuracy on test data: {round(acc, 4)}")
@@ -159,11 +164,7 @@ def run_classifiers():
     importances = clf.feature_importances_
     indices = np.argsort(importances)[::-1]
     
-    print(len(importances))
-    print(len(indices))
-
     #Print the feature ranking 
-    # Only run this part when we don't use embedding as features
     print("Feature ranking:")
 
     with open("e_output/results.txt", "a") as outf:
@@ -172,8 +173,8 @@ def run_classifiers():
             print(feature_string)
             outf.write(feature_string + "\n")
 
-    # plot_partial_dependence(clf, x_train, indices[:5], feature_names=feature_names, n_jobs=4)
-    display = PartialDependenceDisplay.from_estimator(clf, x_train, indices[:5], feature_names=feature_names)
+    # plot_partial_dependence(clf, x_train_subset, indices[:5], feature_names=feature_names, n_jobs=4)
+    display = PartialDependenceDisplay.from_estimator(clf, x_train_subset, indices[:5], feature_names=feature_names)
     display.plot()
     plt.savefig(f"e_output/feature_importance.png")
     plt.close()

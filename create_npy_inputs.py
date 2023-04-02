@@ -116,7 +116,6 @@ def extract_features() -> npt.NDArray[np.float64]:
     # above as one-liner
     count = sum([len(user_info["newsletters"]) for user_id, user_info in user_newsletter_events.items()])
 
-    #remove +768 if you are not using embeddings as features 
     feats = np.zeros((count, NUM_FEATURES + 768 + 1))
 
     # extract features
@@ -246,7 +245,6 @@ def extract_event_features(
         num_feats[11] = 0
 
     # BERT features 
-    # Comment these next two lines out if we are not using BERT features
     
     bert_features = newsletter_embeddings[str(newsletter_id)]
     feats = np.concatenate((num_feats, bert_features), axis=0)

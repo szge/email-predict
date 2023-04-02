@@ -168,3 +168,4 @@ def finetune_bert_model() -> None:
     plt.ylabel('Loss')
     plt.legend()
     plt.savefig('e_output/train_validation_loss_bert.png')
+    plt.close()
