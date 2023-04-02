@@ -1,5 +1,8 @@
 # email-predict
 
-1. Copy email data (```emailevents_exports.csv```, ```newsletters.csv```, ```users_export.csv```) into the ```a_input``` folder
-2. Run ```main.py``` (it is best to run each function call in ```main.py``` sequentially while keeping the remaining function calls commented out)
+**Setup**
+Copy `emailevents_export.csv`, `newsletters.csv`, and `user_export.csv` into the folder `a_input`.
 
+The data is available on request.
+
+Run `main.py`, commenting and uncommenting the specific parts you want to run.
