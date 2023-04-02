@@ -159,8 +159,11 @@ def run_classifiers():
     importances = clf.feature_importances_
     indices = np.argsort(importances)[::-1]
     
+    print(len(importances))
+    print(len(indices))
 
-    #Print the feature ranking
+    #Print the feature ranking 
+    # Only run this part when we don't use embedding as features
     print("Feature ranking:")
 
     with open("e_output/results.txt", "a") as outf:
